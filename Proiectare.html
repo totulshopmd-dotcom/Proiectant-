@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculator Acoperiș — Proiectare exactă | Valmex</title>
+<meta name="description" content="Calculator tehnic de acoperiș: suprafață exactă pe fiecare pantă, pentru acoperiș cu 1, 2 sau 4 laturi. Export imagine și PDF.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink: #0A0A0A;
+  --panel: #141414;
+  --panel-2: #1a1a1a;
+  --line: #2a2a2a;
+  --paper: #FAFAFA;
+  --muted: #9a9da2;
+  --red: #C81E2C;
+  --red-hover: #E52334;
+  --mono: "JetBrains Mono", monospace;
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h2{
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--paper);
+  margin: 22px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+h2:first-of-type{ margin-top: 0; }
+
+.hdr{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  background: #000000;
+  border-bottom: 1px solid #1a1a1a;
+  flex-wrap: wrap;
+}
+.hdr-logo{ height: 58px; width: auto; display: block; }
+.hdr-brand{
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.05em;
+}
+.hdr-title{ color: var(--muted); font-size: 13.5px; }
+.hdr-contact{ color: var(--muted); font-size: 12px; margin-left: auto; }
+@media (max-width: 720px){
+  .hdr-contact{ margin-left: 0; flex-basis: 100%; }
+}
+
+.layout{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+@media (min-width: 980px){
+  .layout{
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .panel-input{ grid-row: 1 / 3; grid-column: 1; border-right: 1px solid var(--line); }
+  .panel-preview{ grid-column: 2; grid-row: 1; }
+  .panel-results{ grid-column: 2; grid-row: 2; }
+}
+
+.panel-input{
+  padding: 18px 20px 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.type-tabs{ display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.type-tab{
+  flex: 1 1 auto;
+  min-width: 100px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--paper);
+  border-radius: 3px;
+  padding: 10px 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  text-align: center;
+}
+.type-tab span{ display:block; font-weight: 400; font-size: 11px; color: var(--muted); margin-top: 3px; }
+.type-tab.selected{ border-color: var(--red); background: #1c1414; color: var(--red); }
+.type-tab.selected span{ color: #e08a90; }
+
+.grid-2{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field{ margin-bottom: 4px; }
+.field label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.field input{
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 10px 10px;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 14.5px;
+}
+.field input:focus{ outline: none; border-color: var(--red); }
+
+.export-actions{ display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.btn{
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  border: none;
+  border-radius: 3px;
+  padding: 11px 16px;
+  cursor: pointer;
+  flex: 1 1 auto;
+}
+.btn-primary{ background: var(--red); color: var(--paper); }
+.btn-primary:hover{ background: var(--red-hover); }
+.btn-ghost{ background: transparent; color: var(--paper); border: 1px solid var(--line); }
+.btn-ghost:hover{ border-color: var(--paper); }
+
+.panel-preview{ background: #ffffff; }
+.stage{ position: relative; width: 100%; height: 46vh; min-height: 320px; }
+#roofCanvas{ width: 100%; height: 100%; display: block; touch-action: none; }
+.stage-hint{
+  position: absolute; left: 14px; bottom: 12px;
+  font-size: 11px; color: rgba(0,0,0,0.42);
+  pointer-events: none;
+}
+
+.panel-results{ padding: 18px 20px 32px; }
+.table-wrap{ overflow-x: auto; }
+table{ width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead th{
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+tbody td{
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+}
+tbody td:first-child{ font-family: var(--font-body); font-weight: 600; }
+tfoot td{ padding: 10px 10px; font-family: var(--mono); font-weight: 600; }
+.total-row td{ border-top: 1px solid var(--line); color: var(--paper); }
+.total-row-accent td{ color: var(--red); font-size: 15px; }
+.microcopy{ color: var(--muted); font-size: 12px; margin-top: 14px; line-height: 1.5; }
+
+@media (max-width: 640px){
+  .grid-2{ grid-template-columns: 1fr; }
+}
+
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hdr">
+    <img class="hdr-logo" src="https://i.ibb.co/Y7dSbJWv/file-00000000fc0071f49163a60f6883bf9b.png" alt="Valmex">
+    <span class="hdr-brand">VALMEX</span>
+    <span class="hdr-title">Calculator Acoperiș — Proiectare exactă</span>
+    <span class="hdr-contact">www.valmex.md &middot; valmex.md@gmail.com &middot; Tel. 078026212</span>
+  </header>
+
+  <main class="layout">
+
+    <!-- PANOU DE INTRARE -->
+    <section class="panel-input" id="panelInput">
+      <h2>1. Tipul acoperișului</h2>
+      <div class="type-tabs" id="typeTabs">
+        <button class="type-tab selected" data-value="1latura">1 latură<span>șarpantă simplă</span></button>
+        <button class="type-tab" data-value="2laturi">2 laturi<span>clasic, în două ape</span></button>
+        <button class="type-tab" data-value="4laturi">4 laturi<span>șarpantă, pe tot conturul</span></button>
+      </div>
+
+      <h2>2. Dimensiuni exacte</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="inL">Lungime clădire L (m)</label>
+          <input type="number" id="inL" value="10" min="1" max="60" step="0.01">
+        </div>
+        <div class="field">
+          <label for="inW">Lățime clădire W (m)</label>
+          <input type="number" id="inW" value="8" min="1" max="40" step="0.01">
+        </div>
+        <div class="field">
+          <label for="inSlope">Unghi pantă (°)</label>
+          <input type="number" id="inSlope" value="30" min="5" max="60" step="0.5">
+        </div>
+        <div class="field">
+          <label for="inOverhang">Streașină / supraînălțare (m)</label>
+          <input type="number" id="inOverhang" value="0.5" min="0" max="2" step="0.01">
+        </div>
+      </div>
+
+      <h2>3. Material și cost (opțional)</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="inWaste">Pierdere tehnică (%)</label>
+          <input type="number" id="inWaste" value="7" min="0" max="30" step="0.5">
+        </div>
+        <div class="field">
+          <label for="inPrice">Preț material (MDL/m²)</label>
+          <input type="number" id="inPrice" value="0" min="0" step="1">
+        </div>
+      </div>
+
+      <div class="export-actions">
+        <button class="btn btn-ghost" id="btnExportImg">Exportă imagine (PNG)</button>
+        <button class="btn btn-primary" id="btnExportPdf">Exportă raport PDF</button>
+      </div>
+    </section>
+
+    <!-- PREVIZUALIZARE 3D -->
+    <section class="panel-preview">
+      <div class="stage" id="stage">
+        <canvas id="roofCanvas"></canvas>
+        <div class="stage-hint">Trage pentru a roti · derulează pentru zoom</div>
+      </div>
+    </section>
+
+    <!-- REZULTATE -->
+    <section class="panel-results" id="panelResults">
+      <h2>Rezultate — suprafață pe fiecare pantă</h2>
+      <div class="table-wrap">
+        <table id="resultsTable">
+          <thead>
+            <tr><th>Pantă</th><th>Formulă</th><th>Suprafață</th></tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="2">Total suprafață pante</td>
+              <td id="totalArea">—</td>
+            </tr>
+            <tr class="total-row-accent">
+              <td colspan="2">Material necesar (cu pierdere tehnică)</td>
+              <td id="materialArea">—</td>
+            </tr>
+            <tr class="total-row-accent" id="costRow" hidden>
+              <td colspan="2">Cost estimativ material</td>
+              <td id="costTotal">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p class="microcopy" id="formulaNote"></p>
+    </section>
+
+  </main>
+
+</div>
+
+<script type="module">
+/**
+ * Valmex — Previzualizare 3D pentru calculatorul de proiectare a acoperișului.
+ * Randează geometria exactă (1/2/4 laturi) din dimensiuni reale. Textura de
+ * grilă (1m² per celulă) ajută la verificarea vizuală a suprafeței calculate
+ * separat, prin formule, în proiectant.js.
+ */
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+let scene, camera, renderer, controls;
+let roofRig = null;
+let canvasEl, containerEl;
+let ready = false;
+let resizeObserver;
+
+init();
+
+function init() {
+  canvasEl = document.getElementById("roofCanvas");
+  containerEl = document.getElementById("stage");
+  if (!canvasEl || !containerEl) return;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+
+  camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+  camera.position.set(11, 8, 13);
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 4;
+  controls.maxDistance = 60;
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.target.set(0, 2, 0);
+  controls.update();
+
+  setupLights();
+  setupGround();
+
+  resize();
+  resizeObserver = new ResizeObserver(resize);
+  resizeObserver.observe(containerEl);
+
+  animate();
+  ready = true;
+  window.dispatchEvent(new CustomEvent("proiectant3d:ready"));
+
+  window.addEventListener("proiectant:update", (e) => buildScene(e.detail));
+}
+
+function setupLights() {
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x555555, 1.1);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+  sun.position.set(10, 14, 8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0x8fa8ff, 0.5);
+  fill.position.set(-8, 6, -6);
+  scene.add(fill);
+}
+
+function setupGround() {
+  const size = 60;
+  const geo = new THREE.PlaneGeometry(size, size);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 1 });
+  const ground = new THREE.Mesh(geo, mat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // grilă tehnică discretă, 1m/celulă — tonuri deschise, potrivite pe fundal alb
+  const grid = new THREE.GridHelper(size, size, 0xc9c9c9, 0xdddddd);
+  grid.position.y = 0.001;
+  scene.add(grid);
+}
+
+function resize() {
+  if (!containerEl || !renderer) return;
+  const w = containerEl.clientWidth || 1, h = containerEl.clientHeight || 1;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+/* ---------------- Textură de grilă — 1m² per celulă, pentru referință vizuală ---------------- */
+
+function buildGridSlopeTexture() {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#b3401f";
+  ctx.fillRect(0, 0, size, size);
+  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1.5, 1.5, size - 3, size - 3);
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size / 2, 0); ctx.lineTo(size / 2, size);
+  ctx.moveTo(0, size / 2); ctx.lineTo(size, size / 2);
+  ctx.stroke();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function slopeMaterial() {
+  return new THREE.MeshStandardMaterial({
+    map: buildGridSlopeTexture(),
+    roughness: 0.75,
+    metalness: 0.05,
+    side: THREE.DoubleSide,
+  });
+}
+
+function addSlopePanel(group, material, p1, p2, p3, p4) {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([...p1, ...p2, ...p3, ...p1, ...p3, ...p4]);
+  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+  const u = Math.max(0.4, dist(p1, p2));
+  const v = Math.max(0.4, dist(p1, p4));
+  const uvs = new Float32Array([0, 0, u, 0, u, v, 0, 0, u, v, 0, v]);
+  geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+  geo.computeVertexNormals();
+
+  const mat = material.clone();
+  mat.map = material.map.clone();
+  mat.map.needsUpdate = true;
+  mat.map.repeat.set(1, 1);
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+}
+
+function addTriPanel(group, material, p1, p2, p3) {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array([...p1, ...p2, ...p3]);
+  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+  const u = Math.max(0.4, dist(p1, p2));
+  const v = Math.max(0.4, Math.max(dist(p1, p3), dist(p2, p3)));
+  geo.setAttribute("uv", new THREE.BufferAttribute(new Float32Array([0, 0, u, 0, u / 2, v]), 2));
+  geo.computeVertexNormals();
+
+  const mat = material.clone();
+  mat.map = material.map.clone();
+  mat.map.needsUpdate = true;
+  mat.map.repeat.set(1, 1);
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+}
+
+function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]); }
+
+function addWalls(group, L, W, wallHeight) {
+  const geo = new THREE.BoxGeometry(W, wallHeight, L);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xcfcac0, roughness: 0.95 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = wallHeight / 2;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  group.add(mesh);
+}
+
+/* ---------------- Construcție geometrie pe tip ---------------- */
+
+function buildMono(group, L, W, slopeRad, e, wallH) {
+  const mat = slopeMaterial();
+  const runFull = W + 2 * e;
+  const halfLen = L / 2 + e;
+  const rise = runFull * Math.tan(slopeRad);
+  const lowX = -runFull / 2, highX = runFull / 2;
+
+  const p1 = [lowX, wallH, -halfLen];
+  const p2 = [lowX, wallH, halfLen];
+  const p3 = [highX, wallH + rise, halfLen];
+  const p4 = [highX, wallH + rise, -halfLen];
+  addSlopePanel(group, mat, p1, p2, p3, p4);
+}
+
+function buildGable(group, L, W, slopeRad, e, wallH) {
+  const mat = slopeMaterial();
+  const We = W / 2 + e;
+  const Le = L / 2 + e;
+  const rise = We * Math.tan(slopeRad);
+  const ridgeY = wallH + rise;
+
+  addSlopePanel(group, mat, [-We, wallH, -Le], [-We, wallH, Le], [0, ridgeY, Le], [0, ridgeY, -Le]);
+  addSlopePanel(group, mat, [We, wallH, Le], [We, wallH, -Le], [0, ridgeY, -Le], [0, ridgeY, Le]);
+}
+
+function buildHip(group, L, W, slopeRad, e, wallH) {
+  const mat = slopeMaterial();
+  // coama se orientează mereu pe direcția mai lungă
+  let effL = L, effW = W, swapped = false;
+  if (W > L) { effL = W; effW = L; swapped = true; }
+
+  const We = effW / 2 + e;
+  const Le = effL / 2 + e;
+  const rise = We * Math.tan(slopeRad);
+  const ridgeY = wallH + rise;
+  const ridgeHalfLen = Math.max(0, Le - We);
+  const r1 = -ridgeHalfLen, r2 = ridgeHalfLen;
+
+  function pt(a, b, c) { return swapped ? [c, b, a] : [a, b, c]; }
+  // când e swapped, axa "lungă" (Z aici) devine X vizual, ca șarpanta să rămână corectă
+
+  addSlopePanel(group, mat, pt(We, wallH, -Le), pt(We, wallH, Le), pt(0, ridgeY, r2), pt(0, ridgeY, r1));
+  addSlopePanel(group, mat, pt(-We, wallH, Le), pt(-We, wallH, -Le), pt(0, ridgeY, r1), pt(0, ridgeY, r2));
+  addTriPanel(group, mat, pt(-We, wallH, -Le), pt(We, wallH, -Le), pt(0, ridgeY, r1));
+  addTriPanel(group, mat, pt(We, wallH, Le), pt(-We, wallH, Le), pt(0, ridgeY, r2));
+}
+
+function clearGroup(g) {
+  if (!g) return;
+  g.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      if (obj.material.map) obj.material.map.dispose();
+      obj.material.dispose();
+    }
+  });
+  scene.remove(g);
+}
+
+function buildScene(cfg) {
+  const L = Math.max(1, cfg.length || 10);
+  const W = Math.max(1, cfg.width || 8);
+  const slopeRad = ((cfg.slope || 30) * Math.PI) / 180;
+  const e = Math.max(0, cfg.overhang || 0);
+  const type = cfg.type || "2laturi";
+  const wallH = 2.6;
+
+  clearGroup(roofRig);
+  roofRig = new THREE.Group();
+  scene.add(roofRig);
+
+  addWalls(roofRig, L, W, wallH);
+
+  if (type === "1latura") buildMono(roofRig, L, W, slopeRad, e, wallH);
+  else if (type === "4laturi") buildHip(roofRig, L, W, slopeRad, e, wallH);
+  else buildGable(roofRig, L, W, slopeRad, e, wallH);
+
+  const dia = Math.max(L, W);
+  const camDist = Math.max(10, dia * 1.0);
+  controls.target.set(0, wallH * 0.7, 0);
+  camera.position.set(camDist * 0.62, camDist * 0.55, camDist * 0.75);
+  controls.update();
+}
+
+window.ProiectantScene = {
+  isReady: () => ready,
+  exportPNG: () => {
+    if (!renderer) return null;
+    renderer.render(scene, camera); // asigură un frame proaspăt înainte de capturare
+    return canvasEl.toDataURL("image/png");
+  },
+};
+
+</script>
+<script>
+/**
+ * Valmex — Calculator Acoperiș, proiectare exactă.
+ * Toate formulele sunt transparente (afișate în tabel) — acesta e un
+ * instrument tehnic, nu unul de vânzări, deci nimic nu e simplificat/ascuns.
+ */
+(function () {
+  "use strict";
+
+  var els = {};
+  var currentType = "2laturi";
+
+  var LOGO_URL = "https://i.ibb.co/Y7dSbJWv/file-00000000fc0071f49163a60f6883bf9b.png";
+  var CONTACT_LINE = "www.valmex.md  \u00B7  valmex.md@gmail.com  \u00B7  Tel. 078026212";
+  var logoImg = null;
+  var logoReady = new Promise(function (resolve) {
+    var img = new Image();
+    img.crossOrigin = "anonymous"; // necesar ca să putem extrage pixelii la export (canvas/PDF)
+    img.onload = function () { logoImg = img; resolve(img); };
+    img.onerror = function () { logoImg = null; resolve(null); };
+    img.src = LOGO_URL;
+  });
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    cacheEls();
+    bindEvents();
+    recompute();
+  }
+
+  function cacheEls() {
+    els.typeTabs = document.getElementById("typeTabs");
+    els.inL = document.getElementById("inL");
+    els.inW = document.getElementById("inW");
+    els.inSlope = document.getElementById("inSlope");
+    els.inOverhang = document.getElementById("inOverhang");
+    els.inWaste = document.getElementById("inWaste");
+    els.inPrice = document.getElementById("inPrice");
+    els.resultsBody = document.getElementById("resultsBody");
+    els.totalArea = document.getElementById("totalArea");
+    els.materialArea = document.getElementById("materialArea");
+    els.costRow = document.getElementById("costRow");
+    els.costTotal = document.getElementById("costTotal");
+    els.formulaNote = document.getElementById("formulaNote");
+    els.btnExportImg = document.getElementById("btnExportImg");
+    els.btnExportPdf = document.getElementById("btnExportPdf");
+  }
+
+  function bindEvents() {
+    els.typeTabs.addEventListener("click", function (e) {
+      var tab = e.target.closest(".type-tab");
+      if (!tab) return;
+      els.typeTabs.querySelectorAll(".type-tab").forEach(function (t) { t.classList.remove("selected"); });
+      tab.classList.add("selected");
+      currentType = tab.getAttribute("data-value");
+      recompute();
+    });
+
+    [els.inL, els.inW, els.inSlope, els.inOverhang, els.inWaste, els.inPrice].forEach(function (input) {
+      input.addEventListener("input", recompute);
+    });
+
+    els.btnExportImg.addEventListener("click", exportImage);
+    els.btnExportPdf.addEventListener("click", exportPdf);
+  }
+
+  function num(el, fallback) {
+    var v = parseFloat(el.value);
+    return isNaN(v) ? fallback : v;
+  }
+
+  /* ---------------- Calcul exact, pe pantă ---------------- */
+
+  function computeSlopeAreas(type, L, W, slopeDeg, e) {
+    var slopeRad = (slopeDeg * Math.PI) / 180;
+    var cosT = Math.cos(slopeRad);
+
+    if (type === "1latura") {
+      var planArea = (L + 2 * e) * (W + 2 * e);
+      var area1 = planArea / cosT;
+      return [{
+        label: "Pantă unică",
+        formula: "(L+2e)\u00D7(W+2e)/cos(unghi) = (" + L.toFixed(2) + "+" + (2 * e).toFixed(2) + ")\u00D7(" + W.toFixed(2) + "+" + (2 * e).toFixed(2) + ")/cos(" + slopeDeg + "\u00B0)",
+        area: area1,
+      }];
+    }
+
+    if (type === "2laturi") {
+      var Le = L + 2 * e;
+      var Whalf = W / 2 + e;
+      var areaSlope = (Le * Whalf) / cosT;
+      var formula2 = "(L+2e)\u00D7(W/2+e)/cos(unghi) = " + Le.toFixed(2) + "\u00D7" + Whalf.toFixed(2) + "/cos(" + slopeDeg + "\u00B0)";
+      return [
+        { label: "Pantă A", formula: formula2, area: areaSlope },
+        { label: "Pantă B", formula: formula2, area: areaSlope },
+      ];
+    }
+
+    // 4 laturi — coama se orientează mereu pe latura mai lungă
+    var effL = L, effW = W;
+    if (W > L) { effL = W; effW = L; }
+    var We = effW / 2 + e;
+    var LeH = effL / 2 + e;
+    var ridgeHalf = Math.max(0, LeH - We);
+    var trapArea = ((LeH + ridgeHalf) * We) / cosT;
+    var triArea = (We * We) / cosT;
+    var formulaTrap = "(L/2+e+coamă/2)\u00D7(W/2+e)/cos(unghi) = (" + LeH.toFixed(2) + "+" + ridgeHalf.toFixed(2) + ")\u00D7" + We.toFixed(2) + "/cos(" + slopeDeg + "\u00B0)";
+    var formulaTri = "(W/2+e)\u00B2/cos(unghi) = " + We.toFixed(2) + "\u00B2/cos(" + slopeDeg + "\u00B0)";
+    return [
+      { label: "Pantă A (lungă)", formula: formulaTrap, area: trapArea },
+      { label: "Pantă B (lungă)", formula: formulaTrap, area: trapArea },
+      { label: "Pantă C (fronton)", formula: formulaTri, area: triArea },
+      { label: "Pantă D (fronton)", formula: formulaTri, area: triArea },
+    ];
+  }
+
+  function fmt(v) { return (Math.round(v * 100) / 100).toFixed(2) + " m²"; }
+  function fmtMDL(v) { return Math.round(v).toLocaleString("ro-RO") + " MDL"; }
+
+  var lastResult = null;
+
+  function recompute() {
+    var L = num(els.inL, 10);
+    var W = num(els.inW, 8);
+    var slopeDeg = num(els.inSlope, 30);
+    var e = num(els.inOverhang, 0.5);
+    var waste = num(els.inWaste, 7);
+    var price = num(els.inPrice, 0);
+
+    var slopes = computeSlopeAreas(currentType, L, W, slopeDeg, e);
+    var total = slopes.reduce(function (sum, s) { return sum + s.area; }, 0);
+    var material = total * (1 + waste / 100);
+    var cost = material * price;
+
+    els.resultsBody.innerHTML = "";
+    slopes.forEach(function (s) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + s.label + "</td><td>" + s.formula + "</td><td>" + fmt(s.area) + "</td>";
+      els.resultsBody.appendChild(tr);
+    });
+
+    els.totalArea.textContent = fmt(total);
+    els.materialArea.textContent = fmt(material) + " (+" + waste + "%)";
+
+    if (price > 0) {
+      els.costRow.hidden = false;
+      els.costTotal.textContent = fmtMDL(cost);
+    } else {
+      els.costRow.hidden = true;
+    }
+
+    els.formulaNote.textContent = "Unghiul pantei față de orizontală. e = supraînălțarea streșinii pe fiecare latură. Formulele calculează suprafața reală înclinată (nu proiecția pe orizontală).";
+
+    lastResult = { L: L, W: W, slopeDeg: slopeDeg, e: e, waste: waste, price: price, slopes: slopes, total: total, material: material, cost: cost, type: currentType };
+
+    window.dispatchEvent(new CustomEvent("proiectant:update", {
+      detail: { length: L, width: W, slope: slopeDeg, overhang: e, type: currentType }
+    }));
+  }
+
+  /* ---------------- Export — document tip factură, format A4, identic în PNG și PDF ---------------- */
+
+  function getPNGDataUrl() {
+    if (window.ProiectantScene && window.ProiectantScene.exportPNG) {
+      return window.ProiectantScene.exportPNG();
+    }
+    return null;
+  }
+
+  function typeLabel(type) {
+    if (type === "1latura") return "1 latură (șarpantă simplă)";
+    if (type === "4laturi") return "4 laturi (șarpantă pe tot conturul)";
+    return "2 laturi (clasic, în două ape)";
+  }
+
+  function docNumber() {
+    var d = new Date();
+    return "VLX-" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0")
+      + "-" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth) {
+    var words = text.split(" ");
+    var lines = [];
+    var line = "";
+    words.forEach(function (word) {
+      var test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  /* ---- PNG: canvas propriu, cu proporții A4 (150dpi) ---- */
+
+  function ensureFontsReady(cb) {
+    if (!document.fonts || !document.fonts.load) { cb(); return; }
+    // eșantion cu diacritice + caractere speciale, ca browserul să încarce
+    // sigur subsetul de font care le conține, înainte să desenăm pe canvas
+    var sample = "ăâîșțĂÂÎȚȘ";
+    Promise.all([
+      document.fonts.load("400 14px Inter", sample),
+      document.fonts.load("600 14px Inter", sample),
+      document.fonts.load("700 14px Inter", sample),
+      document.fonts.load("700 30px 'Barlow Condensed'", sample),
+      document.fonts.load("600 20px 'Barlow Condensed'", sample),
+    ]).then(function () {
+      document.fonts.ready.then(cb, cb);
+    }).catch(function () { cb(); });
+  }
+
+  function exportImage() {
+    var dataUrl = getPNGDataUrl();
+    if (!dataUrl || !lastResult) { alert("Previzualizarea 3D nu e încă pregătită — mai încearcă o dată."); return; }
+    var img = new Image();
+    img.onload = function () {
+      ensureFontsReady(function () {
+        logoReady.then(function () {
+          var canvas = composeInvoiceCanvas(lastResult, img, true);
+          var url;
+          try {
+            url = canvas.toDataURL("image/png");
+          } catch (e) {
+            // găzduirea logo-ului nu permite extragerea pixelilor (CORS) — reconstruim fără el,
+            // ca exportul să rămână funcțional
+            console.warn("Logo indisponibil pentru export (CORS) — export fără logo.", e);
+            canvas = composeInvoiceCanvas(lastResult, img, false);
+            url = canvas.toDataURL("image/png");
+          }
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = "valmex-raport-acoperis-" + currentType + ".png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+      });
+    };
+    img.src = dataUrl;
+  }
+
+  function composeInvoiceCanvas(r, img3d, includeLogo) {
+    var PW = 1240, MARGIN = 64; // A4 la ~150dpi
+    var contentW = PW - MARGIN * 2;
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+    // -- prima trecere: calculăm înălțimile ca să dimensionăm corect canvas-ul --
+    ctx.font = "13px Inter";
+    var colLabelW = contentW * 0.16, colFormulaW = contentW * 0.56, colAreaW = contentW * 0.28;
+    var rowHeights = r.slopes.map(function (s) {
+      var lines = wrapCanvasText(ctx, s.formula, colFormulaW - 20);
+      return Math.max(38, lines.length * 17 + 16);
+    });
+    var tableH = 40 + rowHeights.reduce(function (a, b) { return a + b; }, 0);
+    var imgH = Math.min(560, contentW * (img3d.height / img3d.width));
+
+    var HEADER_H = 132;
+    var y = HEADER_H + 34;
+    y += 26 + 6 * 24 + 24;          // secțiunea "Parametri" (titlu + 6 rânduri)
+    y += 26 + imgH + 30;            // secțiunea "Previzualizare 3D"
+    y += 26 + tableH + 20;          // secțiunea "Calculul suprafețelor"
+    y += (r.price > 0 ? 3 : 2) * 30 + 30; // totaluri
+    y += 60;                        // footer
+
+    canvas.width = PW;
+    canvas.height = Math.round(y);
+
+    // -- fundal --
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // -- antet --
+    ctx.fillStyle = "#0A0A0A";
+    ctx.fillRect(0, 0, canvas.width, HEADER_H);
+
+    var logoDrawn = false;
+    if (includeLogo && logoImg) {
+      try {
+        var logoH = 64, logoW = logoH * (logoImg.width / logoImg.height);
+        ctx.drawImage(logoImg, MARGIN, 24, logoW, logoH);
+        logoDrawn = true;
+      } catch (e) { logoDrawn = false; }
+    }
+    if (!logoDrawn) {
+      ctx.fillStyle = "#C81E2C";
+      ctx.font = "700 30px 'Barlow Condensed'";
+      ctx.fillText("VALMEX", MARGIN, 52);
+    }
+
+    ctx.fillStyle = "#FAFAFA";
+    ctx.font = "600 20px 'Barlow Condensed'";
+    ctx.textAlign = "right";
+    ctx.fillText("RAPORT DE PROIECTARE ACOPERIȘ", canvas.width - MARGIN, 48);
+    ctx.font = "13px Inter";
+    ctx.fillStyle = "#b8bcc0";
+    ctx.fillText("Nr. " + docNumber() + "  \u00B7  " + new Date().toLocaleString("ro-RO"), canvas.width - MARGIN, 72);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#9a9da2";
+    ctx.font = "13px Inter";
+    ctx.fillText(CONTACT_LINE, MARGIN, 100);
+
+    y = HEADER_H + 34;
+
+    // -- parametri --
+    y = sectionTitle(ctx, "Parametri proiect", MARGIN, y);
+    var params = [
+      ["Tip acoperiș", typeLabel(r.type)],
+      ["Lungime clădire (L)", r.L.toFixed(2) + " m"],
+      ["Lățime clădire (W)", r.W.toFixed(2) + " m"],
+      ["Unghi pantă", r.slopeDeg + "\u00B0"],
+      ["Streașină / supraînălțare (e)", r.e.toFixed(2) + " m"],
+      ["Pierdere tehnică material", r.waste + "%"],
+    ];
+    ctx.font = "14px Inter";
+    params.forEach(function (p) {
+      ctx.fillStyle = "#6b6f74"; ctx.fillText(p[0], MARGIN, y);
+      ctx.fillStyle = "#111"; ctx.font = "600 14px Inter";
+      ctx.fillText(p[1], MARGIN + 260, y);
+      ctx.font = "14px Inter";
+      y += 24;
+    });
+    y += 10;
+
+    // -- previzualizare 3D --
+    y = sectionTitle(ctx, "Previzualizare 3D", MARGIN, y);
+    var imgW = contentW;
+    ctx.strokeStyle = "#ddd"; ctx.lineWidth = 1;
+    ctx.strokeRect(MARGIN, y, imgW, imgH);
+    ctx.drawImage(img3d, MARGIN, y, imgW, imgH);
+    y += imgH + 30;
+
+    // -- tabel calcul --
+    y = sectionTitle(ctx, "Calculul suprafețelor pe fiecare pantă", MARGIN, y);
+    var tx = MARGIN, tw = contentW;
+    var colX = [tx, tx + colLabelW, tx + colLabelW + colFormulaW];
+
+    ctx.fillStyle = "#0A0A0A";
+    ctx.fillRect(tx, y, tw, 32);
+    ctx.fillStyle = "#FAFAFA"; ctx.font = "bold 12px Inter";
+    ctx.fillText("PANTĂ", colX[0] + 10, y + 21);
+    ctx.fillText("FORMULĂ", colX[1] + 10, y + 21);
+    ctx.textAlign = "right";
+    ctx.fillText("SUPRAFAȚĂ", colX[2] + colAreaW - 10, y + 21);
+    ctx.textAlign = "left";
+    y += 32;
+
+    r.slopes.forEach(function (s, i) {
+      var rh = rowHeights[i];
+      ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#f6f6f6";
+      ctx.fillRect(tx, y, tw, rh);
+      ctx.strokeStyle = "#e4e4e4"; ctx.strokeRect(tx, y, tw, rh);
+
+      ctx.fillStyle = "#111"; ctx.font = "600 14px Inter";
+      ctx.fillText(s.label, colX[0] + 10, y + 22);
+
+      ctx.fillStyle = "#555"; ctx.font = "12.5px Inter";
+      var lines = wrapCanvasText(ctx, s.formula, colFormulaW - 20);
+      lines.forEach(function (line, li) { ctx.fillText(line, colX[1] + 10, y + 20 + li * 17); });
+
+      ctx.fillStyle = "#111"; ctx.font = "700 14px Inter";
+      ctx.textAlign = "right";
+      ctx.fillText(s.area.toFixed(2) + " m\u00B2", colX[2] + colAreaW - 10, y + 22);
+      ctx.textAlign = "left";
+
+      y += rh;
+    });
+    y += 24;
+
+    // -- totaluri --
+    var totalLines = [
+      ["Total suprafață pante", r.total.toFixed(2) + " m\u00B2", false],
+      ["Material necesar (+" + r.waste + "% pierdere tehnică)", r.material.toFixed(2) + " m\u00B2", false],
+    ];
+    if (r.price > 0) totalLines.push(["Cost estimativ material", Math.round(r.cost).toLocaleString("ro-RO") + " MDL", true]);
+
+    var boxW = 460, boxX = MARGIN + contentW - boxW;
+    var boxH = totalLines.length * 30 + 16;
+    ctx.strokeStyle = "#0A0A0A"; ctx.lineWidth = 1.4;
+    ctx.strokeRect(boxX, y, boxW, boxH);
+    var ly = y + 28;
+    totalLines.forEach(function (t) {
+      ctx.font = "600 14px Inter";
+      ctx.fillStyle = t[2] ? "#C81E2C" : "#333";
+      ctx.fillText(t[0], boxX + 16, ly);
+      ctx.font = t[2] ? "bold 16px Inter" : "700 14px Inter";
+      ctx.textAlign = "right";
+      ctx.fillText(t[1], boxX + boxW - 16, ly);
+      ctx.textAlign = "left";
+      ly += 30;
+    });
+    y += boxH + 40;
+
+    // -- footer --
+    ctx.strokeStyle = "#e4e4e4"; ctx.beginPath(); ctx.moveTo(MARGIN, y); ctx.lineTo(MARGIN + contentW, y); ctx.stroke();
+    y += 22;
+    ctx.font = "11.5px Inter"; ctx.fillStyle = "#9a9da2";
+    ctx.fillText("Document generat automat de calculatorul Valmex.md \u2014 oferta finală se confirmă după o vizită tehnică.", MARGIN, y);
+
+    return canvas;
+  }
+
+  function sectionTitle(ctx, text, x, y) {
+    ctx.fillStyle = "#111";
+    ctx.font = "700 17px 'Barlow Condensed'";
+    ctx.fillText(text, x, y);
+    ctx.strokeStyle = "#C81E2C";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y + 10); ctx.lineTo(x + 46, y + 10); ctx.stroke();
+    return y + 36;
+  }
+
+  /* ---- PDF: aceeași structură, pe foaie A4 reală ---- */
+
+  function toAsciiRo(s) {
+    var map = { "ă": "a", "Ă": "A", "â": "a", "Â": "A", "î": "i", "Î": "I",
+      "ș": "s", "Ș": "S", "ş": "s", "Ş": "S", "ț": "t", "Ț": "T", "ţ": "t", "Ţ": "T" };
+    return String(s).replace(/[ăĂâÂîÎșȘşŞțȚţŢ]/g, function (ch) { return map[ch] || ch; });
+  }
+
+  function exportPdf() {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("Biblioteca PDF nu s-a încărcat — verifică conexiunea la internet și încearcă din nou.");
+      return;
+    }
+    if (!lastResult) return;
+    logoReady.then(function () { buildPdfDocument(lastResult); });
+  }
+
+  function buildPdfDocument(r) {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ unit: "mm", format: "a4" });
+
+    // fontul standard al jsPDF (helvetica) nu conține diacriticele românești
+    // ș/ț (virgulă dedesubt) — transliterăm automat tot ce trece prin doc.text(),
+    // ca documentul să fie mereu complet lizibil, fără caractere lipsă.
+    var _origText = doc.text.bind(doc);
+    doc.text = function (text, x, y, opts) {
+      if (Array.isArray(text)) text = text.map(toAsciiRo);
+      else text = toAsciiRo(text);
+      return _origText(text, x, y, opts);
+    };
+
+    var PW = 210, MARGIN = 15;
+    var contentW = PW - MARGIN * 2;
+
+    // antet
+    var HEADER_H = 34;
+    doc.setFillColor(10, 10, 10);
+    doc.rect(0, 0, PW, HEADER_H, "F");
+
+    var logoDrawn = false;
+    if (logoImg) {
+      try {
+        var logoH = 20, logoW = logoH * (logoImg.width / logoImg.height);
+        doc.addImage(logoImg, "PNG", MARGIN, 6, logoW, logoH);
+        logoDrawn = true;
+      } catch (e) { logoDrawn = false; }
+    }
+    if (!logoDrawn) {
+      doc.setTextColor(200, 30, 44);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(19);
+      doc.text("VALMEX", MARGIN, 15);
+    }
+
+    doc.setTextColor(250, 250, 250);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("RAPORT DE PROIECTARE ACOPERIȘ", PW - MARGIN, 12, { align: "right" });
+    doc.setFontSize(8.5);
+    doc.setTextColor(190, 194, 198);
+    doc.text("Nr. " + docNumber() + "  \u00B7  " + new Date().toLocaleString("ro-RO"), PW - MARGIN, 18, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(180, 184, 188);
+    doc.text(CONTACT_LINE, MARGIN, HEADER_H - 4);
+
+    var y = HEADER_H + 10;
+    doc.setTextColor(20, 20, 20);
+
+    y = pdfSectionTitle(doc, "Parametri proiect", MARGIN, y);
+    var params = [
+      ["Tip acoperiș", typeLabel(r.type)],
+      ["Lungime clădire (L)", r.L.toFixed(2) + " m"],
+      ["Lățime clădire (W)", r.W.toFixed(2) + " m"],
+      ["Unghi pantă", r.slopeDeg + "\u00B0"],
+      ["Streașină / supraînălțare (e)", r.e.toFixed(2) + " m"],
+      ["Pierdere tehnică material", r.waste + "%"],
+    ];
+    doc.setFontSize(10.5);
+    params.forEach(function (p) {
+      doc.setFont("helvetica", "normal"); doc.setTextColor(100);
+      doc.text(p[0], MARGIN, y);
+      doc.setFont("helvetica", "bold"); doc.setTextColor(20);
+      doc.text(p[1], MARGIN + 60, y);
+      y += 6;
+    });
+    y += 6;
+
+    y = pdfSectionTitle(doc, "Previzualizare 3D", MARGIN, y);
+    var imgData = getPNGDataUrl();
+    var imgH = 95;
+    if (imgData) {
+      doc.setDrawColor(220);
+      doc.rect(MARGIN, y, contentW, imgH);
+      doc.addImage(imgData, "PNG", MARGIN, y, contentW, imgH);
+      y += imgH + 10;
+    }
+
+    if (y > 230) { doc.addPage(); y = 18; }
+    y = pdfSectionTitle(doc, "Calculul suprafețelor pe fiecare pantă", MARGIN, y);
+
+    var colLabelW = contentW * 0.20, colFormulaW = contentW * 0.52, colAreaW = contentW * 0.28;
+    var colX = [MARGIN, MARGIN + colLabelW, MARGIN + colLabelW + colFormulaW];
+
+    doc.setFillColor(10, 10, 10);
+    doc.rect(MARGIN, y, contentW, 8, "F");
+    doc.setTextColor(250, 250, 250);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+    doc.text("PANTĂ", colX[0] + 2, y + 5.5);
+    doc.text("FORMULĂ", colX[1] + 2, y + 5.5);
+    doc.text("SUPRAFAȚĂ", colX[2] + colAreaW - 2, y + 5.5, { align: "right" });
+    y += 8;
+
+    doc.setTextColor(20);
+    r.slopes.forEach(function (s, i) {
+      var formulaLines = doc.splitTextToSize(s.formula, colFormulaW - 4);
+      var rh = Math.max(8, formulaLines.length * 4.2 + 3);
+      if (y + rh > 285) { doc.addPage(); y = 18; }
+
+      doc.setFillColor(i % 2 === 0 ? 255 : 246);
+      doc.rect(MARGIN, y, contentW, rh, "F");
+      doc.setDrawColor(228);
+      doc.rect(MARGIN, y, contentW, rh);
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+      doc.text(s.label, colX[0] + 2, y + 5);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+      doc.text(formulaLines, colX[1] + 2, y + 5);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+      doc.text(s.area.toFixed(2) + " m\u00B2", colX[2] + colAreaW - 2, y + 5, { align: "right" });
+
+      y += rh;
+    });
+    y += 8;
+
+    if (y > 250) { doc.addPage(); y = 18; }
+    var totalLines = [
+      ["Total suprafață pante", r.total.toFixed(2) + " m\u00B2", false],
+      ["Material necesar (+" + r.waste + "% pierdere tehnică)", r.material.toFixed(2) + " m\u00B2", false],
+    ];
+    if (r.price > 0) totalLines.push(["Cost estimativ material", Math.round(r.cost).toLocaleString("ro-RO") + " MDL", true]);
+
+    var boxW = 95, boxX = MARGIN + contentW - boxW, boxH = totalLines.length * 7 + 4;
+    doc.setDrawColor(10, 10, 10);
+    doc.rect(boxX, y, boxW, boxH);
+    var ly = y + 6;
+    totalLines.forEach(function (t) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+      if (t[2]) doc.setTextColor(200, 30, 44); else doc.setTextColor(40);
+      doc.text(t[0], boxX + 3, ly);
+      doc.text(t[1], boxX + boxW - 3, ly, { align: "right" });
+      ly += 7;
+    });
+    doc.setTextColor(20);
+    y += boxH + 12;
+
+    doc.setDrawColor(228);
+    doc.line(MARGIN, y, MARGIN + contentW, y);
+    y += 6;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text("Document generat automat de calculatorul Valmex.md \u2014 oferta finală se confirmă după o vizită tehnică.", MARGIN, y);
+
+    doc.save("valmex-raport-acoperis-" + currentType + ".pdf");
+  }
+
+  function pdfSectionTitle(doc, text, x, y) {
+    doc.setTextColor(17, 17, 17);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12.5);
+    doc.text(text, x, y);
+    doc.setDrawColor(200, 30, 44);
+    doc.setLineWidth(0.8);
+    doc.line(x, y + 2, x + 14, y + 2);
+    doc.setLineWidth(0.2);
+    return y + 9;
+  }
+
+})();
+
+</script>
+</body>
+</html>
